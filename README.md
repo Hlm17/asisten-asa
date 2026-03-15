@@ -8,6 +8,7 @@
 
 Project ini dikembangkan untuk mendukung aksesibilitas teknologi dan memberikan solusi praktis bagi berbagai kebutuhan pengguna disabilitas.
 
+CATATAN : Project ini baik digunakan di browser Chrome dan 
 ---
 
 #  Demo Aplikasi
@@ -28,17 +29,17 @@ Tujuan utama dari **Asisten Asa** adalah:
 
 ---
 
-# ✨ Fitur Utama
+#  Fitur Utama
 
-### 🗣️ Voice Assistant
+###  Voice Assistant
 
 Pengguna dapat mengontrol aplikasi menggunakan perintah suara.
 
-### 🔎 Deteksi Uang
+###  Deteksi Uang
 
 Membantu pengguna dengan keterbatasan penglihatan untuk membaca nominal uang berbasis machine learning.
 
-### 🎨 Accessibility Mode
+###  Accessibility Mode
 
 Mode tampilan khusus untuk meningkatkan keterbacaan seperti:
 
