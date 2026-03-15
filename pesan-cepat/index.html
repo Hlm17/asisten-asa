@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Pesan Cepat — Asisten Asa</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: '#1a3e20',
+                        brand: '#1a3e20',
+                        'accent-orange': '#e67e22',
+                        'background-light': '#f6f7f6',
+                        'brand-yellow': '#eab308',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Modal backdrop animation */
+        .modal-backdrop {
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-backdrop.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Modal panel slide-up */
+        .modal-panel {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+        }
+
+        .modal-backdrop.hidden .modal-panel {
+            transform: translateY(24px);
+            opacity: 0;
+        }
+
+        /* Speaking animation on button */
+        @keyframes speakPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px rgba(230, 126, 34, 0);
+            }
+        }
+
+        .speaking {
+            animation: speakPulse 0.8s ease-in-out 2;
+            border-color: #e67e22 !important;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light font-sans antialiased">
+    <div class="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-xl">
+
+        <!-- Header -->
+        <header
+            class="sticky top-0 z-10 bg-white/80 backdrop-blur-md px-4 py-4 flex items-center border-b border-primary/5">
+            <a href="/" class="p-2 rounded-full hover:bg-primary/5 text-primary transition-colors">
+                <span class="material-symbols-outlined text-2xl">arrow_back</span>
+            </a>
+            <h1 class="text-lg font-bold text-primary flex-1 text-center">Pesan Cepat</h1>
+        </header>
+
+        <!-- Search -->
+        <div class="px-6 py-6">
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <span class="material-symbols-outlined text-primary/40">search</span>
+                </div>
+                <input id="search-input"
+                    class="block w-full pl-11 pr-4 py-4 bg-primary/5 border-none rounded-2xl text-slate-900 placeholder:text-primary/40 focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                    placeholder="Cari pesan..." type="text" />
+            </div>
+        </div>
+
+        <!-- Add Custom Message Button -->
+        <div class="px-6 pb-8">
+            <button id="btn-add-message"
+                class="w-full flex items-center justify-between bg-primary text-white p-4 rounded-2xl shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity active:scale-[0.98]">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/20 p-2 rounded-xl">
+                        <span class="material-symbols-outlined">add_comment</span>
+                    </div>
+                    <span class="font-semibold">Tambah Pesan Cepat</span>
+                </div>
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 px-6 pb-10 overflow-y-auto">
+
+            <!-- Pesan Cepat Umum -->
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-primary font-bold text-lg">Pesan Cepat Umum</h2>
+                <span id="count-umum" class="text-xs font-medium text-primary/60 bg-primary/5 px-2 py-1 rounded-full">2
+                    Pesan</span>
+            </div>
+            <div id="grid-umum" class="grid grid-cols-2 gap-3 mb-8">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Pesan Cepat Saya -->
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-primary font-bold text-lg">Pesan Cepat Saya</h2>
+                <span id="count-saya" class="text-xs font-medium text-primary/60 bg-primary/5 px-2 py-1 rounded-full">0
+                    Pesan</span>
+            </div>
+            <div id="grid-saya" class="grid grid-cols-2 gap-3 mb-8">
+                <!-- Populated by JS -->
+            </div>
+            <div id="empty-state-saya"
+                class="bg-primary/5 border border-dashed border-primary/20 rounded-2xl p-8 text-center mb-8">
+                <p class="text-primary/40 text-sm font-medium">Belum ada pesan yang ditambahkan</p>
+            </div>
+
+            <!-- Suggestion -->
+            <div class="mt-4 text-center px-4">
+                <div class="inline-flex items-center justify-center size-16 rounded-full bg-primary/5 mb-4">
+                    <span class="material-symbols-outlined text-primary/40 text-3xl">lightbulb</span>
+                </div>
+                <h3 class="text-primary/80 font-semibold">Butuh inspirasi?</h3>
+                <p class="text-sm text-primary/60 mt-2">Tambahkan pesan yang sering Anda gunakan sehari-hari. Ketuk
+                    pesan untuk mengucapkannya dengan suara.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- Modal: Tambah Pesan Cepat                                     -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div id="modal-add" class="modal-backdrop hidden fixed inset-0 z-50 flex items-end justify-center bg-black/40">
+        <div class="modal-panel bg-white w-full max-w-md rounded-t-3xl p-6 pb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-bold text-primary">Tambah Pesan Cepat</h2>
+                <button id="btn-close-modal" class="p-2 rounded-full hover:bg-primary/5 transition-colors">
+                    <span class="material-symbols-outlined text-primary/60">close</span>
+                </button>
+            </div>
+            <textarea id="input-new-message" rows="3"
+                class="w-full px-4 py-3 bg-primary/5 border-none rounded-2xl text-slate-900 placeholder:text-primary/40 focus:ring-2 focus:ring-primary/20 transition-all text-base resize-none"
+                placeholder="Ketik pesan cepat Anda di sini..."></textarea>
+            <button id="btn-save-message"
+                class="w-full mt-4 bg-primary text-white py-3 rounded-2xl font-semibold hover:opacity-90 transition-opacity active:scale-[0.98] flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-xl">save</span>
+                Simpan Pesan
+            </button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- JavaScript: App Logic                                         -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <script>
+        // ── Constants ───────────────────────────────────────────────
+        const STORAGE_KEY = 'pesanCepatSaya';
+
+        // Default quick messages (read-only)
+        const DEFAULT_MESSAGES = [
+            'Ini berapa harganya?',
+            'Mau bayar',
+        ];
+
+        // ── DOM References ──────────────────────────────────────────
+        const gridUmum = document.getElementById('grid-umum');
+        const gridSaya = document.getElementById('grid-saya');
+        const countUmum = document.getElementById('count-umum');
+        const countSaya = document.getElementById('count-saya');
+        const emptyStateSaya = document.getElementById('empty-state-saya');
+        const searchInput = document.getElementById('search-input');
+        const modalAdd = document.getElementById('modal-add');
+        const btnAddMessage = document.getElementById('btn-add-message');
+        const btnCloseModal = document.getElementById('btn-close-modal');
+        const btnSaveMessage = document.getElementById('btn-save-message');
+        const inputNewMsg = document.getElementById('input-new-message');
+
+        // ── Voice Setup ─────────────────────────────────────────────
+        let indonesianVoice = null;
+
+        /**
+         * Find the best Indonesian female voice from the browser.
+         * Prefers Google Indonesia voices which sound natural.
+         */
+        function findBestVoice() {
+            const voices = speechSynthesis.getVoices();
+
+            // Priority 1: Google Indonesian female voice
+            indonesianVoice = voices.find(v =>
+                v.lang === 'id-ID' && v.name.toLowerCase().includes('google') && v.name.toLowerCase().includes('female')
+            );
+
+            // Priority 2: Any Google Indonesian voice (usually female by default)
+            if (!indonesianVoice) {
+                indonesianVoice = voices.find(v =>
+                    v.lang === 'id-ID' && v.name.toLowerCase().includes('google')
+                );
+            }
+
+            // Priority 3: Any Indonesian voice
+            if (!indonesianVoice) {
+                indonesianVoice = voices.find(v => v.lang === 'id-ID');
+            }
+
+            // Priority 4: Any id voice
+            if (!indonesianVoice) {
+                indonesianVoice = voices.find(v => v.lang.startsWith('id'));
+            }
+
+            if (indonesianVoice) {
+                console.log('[voice] Using voice:', indonesianVoice.name, indonesianVoice.lang);
+            } else {
+                console.log('[voice] No Indonesian voice found, will use lang fallback');
+            }
+        }
+
+        // Load voices — some browsers fire this asynchronously
+        speechSynthesis.getVoices();
+        speechSynthesis.addEventListener('voiceschanged', findBestVoice);
+        findBestVoice();
+
+        /**
+         * Speak the given text aloud using the Web Speech API in Indonesian.
+         * @param {string} text
+         * @param {HTMLElement} [cardEl] - Optional card element to animate
+         */
+        function speakText(text, cardEl) {
+            speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID';
+            utterance.rate = 1;
+            utterance.pitch = 1;
+
+            if (indonesianVoice) {
+                utterance.voice = indonesianVoice;
+            }
+
+            // Visual feedback
+            if (cardEl) {
+                cardEl.classList.add('speaking');
+                utterance.addEventListener('end', () => cardEl.classList.remove('speaking'));
+                utterance.addEventListener('error', () => cardEl.classList.remove('speaking'));
+            }
+
+            speechSynthesis.speak(utterance);
+        }
+
+        // ── Data / LocalStorage ─────────────────────────────────────
+
+        function getCustomMessages() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            } catch {
+                return [];
+            }
+        }
+
+        function saveCustomMessages(messages) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+        }
+
+        function addCustomMessage(text) {
+            const messages = getCustomMessages();
+            messages.push(text);
+            saveCustomMessages(messages);
+        }
+
+        function deleteCustomMessage(index) {
+            const messages = getCustomMessages();
+            messages.splice(index, 1);
+            saveCustomMessages(messages);
+        }
+
+        // ── Rendering ───────────────────────────────────────────────
+
+        /**
+         * Create a message card button element.
+         * @param {string} text
+         * @param {Object} options
+         * @param {boolean} [options.deletable]
+         * @param {number}  [options.deleteIndex]
+         */
+        function createCard(text, options = {}) {
+            const btn = document.createElement('button');
+            btn.className = 'w-full text-left group message-card';
+            btn.dataset.text = text.toLowerCase();
+
+            const card = document.createElement('div');
+            card.className = 'bg-white border border-primary/10 p-4 rounded-2xl flex items-center justify-between gap-2 hover:border-accent-orange transition-all active:scale-[0.98] h-full';
+
+            const p = document.createElement('p');
+            p.className = 'text-slate-900 font-medium text-sm line-clamp-2 flex-1';
+            p.textContent = text;
+
+            const iconWrap = document.createElement('div');
+            iconWrap.className = 'flex items-center gap-1 flex-shrink-0';
+
+            // Speaker icon
+            const speakerIcon = document.createElement('span');
+            speakerIcon.className = 'material-symbols-outlined text-primary/40 group-hover:text-accent-orange text-xl';
+            speakerIcon.textContent = 'volume_up';
+            iconWrap.appendChild(speakerIcon);
+
+            // Delete icon (only for custom messages)
+            if (options.deletable) {
+                const deleteBtn = document.createElement('span');
+                deleteBtn.className = 'material-symbols-outlined text-primary/20 hover:text-red-500 text-lg cursor-pointer transition-colors ml-1';
+                deleteBtn.textContent = 'delete';
+                deleteBtn.title = 'Hapus pesan';
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteCustomMessage(options.deleteIndex);
+                    render();
+                });
+                iconWrap.appendChild(deleteBtn);
+            }
+
+            card.appendChild(p);
+            card.appendChild(iconWrap);
+            btn.appendChild(card);
+
+            // Click → speak
+            btn.addEventListener('click', () => speakText(text, card));
+
+            return btn;
+        }
+
+        /**
+         * Full render of both message grids.
+         */
+        function render(filter = '') {
+            const query = filter.toLowerCase().trim();
+
+            // ── Pesan Cepat Umum ──
+            gridUmum.innerHTML = '';
+            const filteredDefault = DEFAULT_MESSAGES.filter(m => m.toLowerCase().includes(query));
+            filteredDefault.forEach(text => gridUmum.appendChild(createCard(text)));
+            countUmum.textContent = `${filteredDefault.length} Pesan`;
+
+            // ── Pesan Cepat Saya ──
+            gridSaya.innerHTML = '';
+            const customMessages = getCustomMessages();
+            const filteredCustom = customMessages
+                .map((text, i) => ({ text, index: i }))
+                .filter(({ text }) => text.toLowerCase().includes(query));
+
+            filteredCustom.forEach(({ text, index }) => {
+                gridSaya.appendChild(createCard(text, { deletable: true, deleteIndex: index }));
+            });
+
+            countSaya.textContent = `${filteredCustom.length} Pesan`;
+            emptyStateSaya.style.display = filteredCustom.length === 0 ? 'block' : 'none';
+        }
+
+        // ── Search ──────────────────────────────────────────────────
+        searchInput.addEventListener('input', () => render(searchInput.value));
+
+        // ── Modal ───────────────────────────────────────────────────
+        function openModal() {
+            modalAdd.classList.remove('hidden');
+            inputNewMsg.value = '';
+            setTimeout(() => inputNewMsg.focus(), 300);
+        }
+
+        function closeModal() {
+            modalAdd.classList.add('hidden');
+        }
+
+        btnAddMessage.addEventListener('click', openModal);
+        btnCloseModal.addEventListener('click', closeModal);
+
+        // Close on backdrop click
+        modalAdd.addEventListener('click', (e) => {
+            if (e.target === modalAdd) closeModal();
+        });
+
+        // Save new message
+        btnSaveMessage.addEventListener('click', () => {
+            const text = inputNewMsg.value.trim();
+            if (!text) {
+                inputNewMsg.focus();
+                return;
+            }
+            addCustomMessage(text);
+            closeModal();
+            render(searchInput.value);
+        });
+
+        // Save on Enter (Shift+Enter for newline)
+        inputNewMsg.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                btnSaveMessage.click();
+            }
+        });
+
+        // ── Initial Render ──────────────────────────────────────────
+        render();
+    </script>
+    <script src="../voice-navigation-feature.js"></script>
+</body>
+
+</html>

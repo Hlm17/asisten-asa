@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Suara ke Teks — Asisten Asa</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: '#1a3e20',
+                        'brand-orange': '#f97316',
+                        'background-light': '#f6f7f6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+
+        .mic-listening .mic-ring {
+            animation: pulse-ring 1.4s ease-out infinite;
+        }
+
+        .transcript-text {
+            font-size: clamp(1.5rem, 6vw, 2.25rem);
+            line-height: 1.65;
+            min-height: 4em;
+        }
+
+        @media (min-width: 640px) {
+            .transcript-text {
+                font-size: clamp(1.75rem, 2.5vw, 2.5rem);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-background-light font-sans antialiased min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="flex items-center bg-white px-4 py-4 border-b border-brand-orange/10 shrink-0">
+        <a href="/" class="text-brand-orange flex size-10 items-center justify-center rounded-full hover:bg-brand-orange/10 transition-colors">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        <h1 class="text-slate-900 text-lg font-bold ml-2">Suara ke Teks</h1>
+    </header>
+
+    <!-- Main content -->
+    <main class="flex-1 flex flex-col px-4 py-6 sm:py-8 max-w-3xl w-full mx-auto">
+        <!-- Transcript card - large, easy to read -->
+        <div class="bg-white rounded-2xl border-2 border-brand-orange/20 shadow-lg shadow-brand-orange/5 overflow-hidden flex flex-col flex-1 min-h-0">
+            <div class="p-4 sm:p-6 flex-1 flex flex-col min-h-[200px]">
+                <div id="transcript-container" class="transcript-text text-left flex-1 break-words overflow-y-auto flex flex-col" aria-live="polite">
+                    <span id="transcript-final" class="text-slate-800 font-medium"></span>
+                    <span id="transcript-interim" class="text-brand-orange/90 font-medium mt-1 min-h-[1.2em]"></span>
+                    <span id="transcript-placeholder" class="text-slate-400 font-normal">Memulai pendengaran...</span>
+                </div>
+            </div>
+
+            <!-- Status bar -->
+            <div class="px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
+                <span id="status-text" class="text-sm font-medium text-slate-500">Memulai...</span>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="btn-clear" class="p-2 rounded-xl text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors" title="Hapus teks">
+                        <span class="material-symbols-outlined">delete_sweep</span>
+                    </button>
+                    <button type="button" id="btn-copy" class="p-2 rounded-xl text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors" title="Salin teks">
+                        <span class="material-symbols-outlined">content_copy</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mic button -->
+        <div class="flex flex-col items-center mt-8 gap-4">
+            <button type="button" id="btn-mic" class="relative flex items-center justify-center size-20 sm:size-24 rounded-full bg-brand-orange text-white shadow-lg shadow-brand-orange/30 hover:bg-orange-600 active:scale-95 transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-orange/40" aria-label="Mikrofon mulai atau berhenti">
+                <span class="absolute inset-0 rounded-full bg-brand-orange/30 mic-ring pointer-events-none" aria-hidden="true"></span>
+                <span id="mic-icon" class="material-symbols-outlined text-4xl sm:text-5xl relative z-10" style="font-variation-settings: 'FILL' 1">mic</span>
+            </button>
+            <p id="mic-hint" class="text-slate-500 font-medium text-lg">Sentuh untuk berhenti atau mulai lagi</p>
+        </div>
+
+        <!-- Back to home -->
+        <a href="/" class="mt-6 w-full py-4 rounded-2xl bg-white border-2 border-brand-orange/20 text-brand-orange font-bold text-center hover:bg-brand-orange/5 transition-colors">
+            Kembali ke Beranda
+        </a>
+    </main>
+
+    <script>
+        (function () {
+            var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                document.getElementById('status-text').textContent = 'Browser tidak mendukung pengenalan suara.';
+                document.getElementById('transcript-placeholder').textContent = 'Browser tidak mendukung.';
+                document.getElementById('btn-mic').disabled = true;
+                return;
+            }
+
+            var recognition = new SpeechRecognition();
+            recognition.lang = 'id-ID';
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 2;
+
+            var finalEl = document.getElementById('transcript-final');
+            var interimEl = document.getElementById('transcript-interim');
+            var placeholderEl = document.getElementById('transcript-placeholder');
+            var statusText = document.getElementById('status-text');
+            var btnMic = document.getElementById('btn-mic');
+            var micIcon = document.getElementById('mic-icon');
+            var micHint = document.getElementById('mic-hint');
+            var btnClear = document.getElementById('btn-clear');
+            var btnCopy = document.getElementById('btn-copy');
+
+            var fullTranscript = '';
+            var isListening = false;
+
+            function setListening(active) {
+                isListening = active;
+                btnMic.classList.toggle('mic-listening', active);
+                if (active) {
+                    statusText.textContent = 'Mendengarkan...';
+                    micHint.textContent = 'Sentuh untuk berhenti';
+                    micIcon.textContent = 'mic';
+                    micIcon.style.fontVariationSettings = "'FILL' 1";
+                    placeholderEl.style.display = fullTranscript || interimEl.textContent ? 'none' : 'inline';
+                } else {
+                    statusText.textContent = fullTranscript ? 'Siap mendengarkan' : 'Siap mendengarkan';
+                    micHint.textContent = 'Sentuh untuk mulai mendengarkan';
+                    micIcon.textContent = 'mic';
+                    micIcon.style.fontVariationSettings = "'FILL' 1";
+                }
+            }
+
+            function updateRealTime(finalText, interimText) {
+                if (finalText) {
+                    if (fullTranscript && !/[\s.]$/.test(fullTranscript)) fullTranscript += ' ';
+                    fullTranscript += finalText;
+                }
+                finalEl.textContent = fullTranscript;
+                interimEl.textContent = interimText || '';
+                if (fullTranscript || interimText) {
+                    placeholderEl.style.display = 'none';
+                } else if (!isListening) {
+                    placeholderEl.style.display = 'inline';
+                    placeholderEl.textContent = 'Sentuh mikrofon untuk mulai. Ucapan Anda akan muncul di sini.';
+                }
+            }
+
+            recognition.onresult = function (event) {
+                var interim = '';
+                var finalSegment = '';
+                for (var i = event.resultIndex; i < event.results.length; i++) {
+                    var transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalSegment += transcript;
+                    } else {
+                        interim += transcript;
+                    }
+                }
+                updateRealTime(finalSegment, interim);
+            };
+
+            recognition.onerror = function (event) {
+                if (event.error === 'aborted') return;
+                if (event.error === 'no-speech') return;
+                setListening(false);
+                statusText.textContent = 'Terjadi kesalahan. Sentuh mikrofon untuk coba lagi.';
+                placeholderEl.style.display = 'inline';
+                placeholderEl.textContent = 'Sentuh mikrofon untuk mulai.';
+                try { recognition.stop(); } catch (e) {}
+            };
+
+            recognition.onend = function () {
+                if (isListening) {
+                    try { recognition.start(); } catch (e) {
+                        setListening(false);
+                    }
+                } else {
+                    setListening(false);
+                }
+            };
+
+            recognition.onstart = function () {
+                setListening(true);
+                placeholderEl.textContent = 'Berbicara... teks akan muncul di sini.';
+                placeholderEl.style.display = fullTranscript ? 'none' : 'inline';
+            };
+
+            function startListening() {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    statusText.textContent = 'Sentuh mikrofon untuk mulai.';
+                    placeholderEl.textContent = 'Sentuh mikrofon untuk mulai. Ucapan Anda akan muncul di sini.';
+                }
+            }
+
+            btnMic.addEventListener('click', function () {
+                if (isListening) {
+                    isListening = false;
+                    btnMic.classList.remove('mic-listening');
+                    try { recognition.stop(); } catch (e) {}
+                    setListening(false);
+                    micHint.textContent = 'Sentuh untuk mulai mendengarkan';
+                    if (!fullTranscript && !finalEl.textContent) {
+                        placeholderEl.style.display = 'inline';
+                        placeholderEl.textContent = 'Sentuh mikrofon untuk mulai. Ucapan Anda akan muncul di sini.';
+                    }
+                } else {
+                    startListening();
+                }
+            });
+
+            btnClear.addEventListener('click', function () {
+                fullTranscript = '';
+                finalEl.textContent = '';
+                interimEl.textContent = '';
+                placeholderEl.style.display = 'inline';
+                placeholderEl.textContent = isListening ? 'Berbicara... teks akan muncul di sini.' : 'Sentuh mikrofon untuk mulai. Ucapan Anda akan muncul di sini.';
+                statusText.textContent = isListening ? 'Mendengarkan...' : 'Siap mendengarkan';
+            });
+
+            btnCopy.addEventListener('click', function () {
+                var text = fullTranscript || finalEl.textContent;
+                if (!text) return;
+                navigator.clipboard.writeText(text).then(function () {
+                    statusText.textContent = 'Teks disalin';
+                    setTimeout(function () {
+                        statusText.textContent = isListening ? 'Mendengarkan...' : 'Siap mendengarkan';
+                    }, 2000);
+                });
+            });
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function () {
+                    setTimeout(startListening, 600);
+                });
+            } else {
+                setTimeout(startListening, 600);
+            }
+        })();
+    </script>
+    <script src="../voice-navigation-feature.js"></script>
+</body>
+
+</html>

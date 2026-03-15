@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Sirene — Asisten Asa</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: '#1a3e20',
+                        'brand-yellow': '#eab308',
+                        'background-light': '#f6f7f6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        @keyframes siren-flash {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .siren-icon {
+            animation: siren-flash 1s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light font-sans antialiased">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="flex items-center bg-white px-4 py-4 border-b border-brand-yellow/10">
+            <a href="/"
+                class="text-brand-yellow flex size-10 items-center justify-center rounded-full hover:bg-brand-yellow/10 transition-colors">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </a>
+            <h1 class="text-slate-900 text-lg font-bold ml-2">Sirene</h1>
+        </header>
+
+        <!-- Content -->
+        <main class="flex-1 flex flex-col items-center justify-center px-6 text-center gap-8">
+            <!-- Animated siren icon -->
+            <div class="size-24 rounded-full bg-brand-yellow/10 flex items-center justify-center siren-icon">
+                <span class="material-symbols-outlined text-brand-yellow text-5xl"
+                    style="font-variation-settings: 'FILL' 1">warning</span>
+            </div>
+
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900 mb-2">Sirene Darurat</h2>
+                <p class="text-slate-500 text-sm leading-relaxed max-w-xs">
+                    Aktifkan sirene suara keras untuk menarik perhatian dalam situasi darurat.
+                </p>
+            </div>
+
+            <!-- Main action: activate siren (with confirmation) -->
+            <button type="button" id="btn-activate-siren"
+                class="w-full max-w-xs py-4 rounded-2xl bg-brand-yellow text-white font-bold text-center hover:bg-yellow-600 transition-colors shadow-lg shadow-brand-yellow/20 flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">emergency</span>
+                Aktifkan Sirene
+            </button>
+
+            <button type="button" id="btn-stop-siren" class="hidden w-full max-w-xs py-4 rounded-2xl bg-red-500 text-white font-bold text-center hover:bg-red-600 transition-colors shadow-lg flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">stop_circle</span>
+                Matikan Sirene
+            </button>
+
+            <a href="/"
+                class="w-full max-w-xs py-4 rounded-2xl bg-white border-2 border-brand-yellow/20 text-brand-yellow font-bold text-center hover:bg-brand-yellow/5 transition-colors">
+                Kembali ke Beranda
+            </a>
+        </main>
+    </div>
+
+    <!-- Confirmation modal -->
+    <div id="siren-confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
+            <div class="size-14 rounded-full bg-brand-yellow/10 flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-brand-yellow text-3xl" style="font-variation-settings: 'FILL' 1">warning</span>
+            </div>
+            <h3 id="confirm-title" class="text-lg font-bold text-slate-900 mb-2">Konfirmasi</h3>
+            <p class="text-slate-600 text-sm mb-6">Apakah Anda yakin ingin mengaktifkan sirene suara keras? Suara akan sangat nyaring.</p>
+            <div class="flex gap-3">
+                <button type="button" id="confirm-cancel" class="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors">
+                    Batal
+                </button>
+                <button type="button" id="confirm-yes" class="flex-1 py-3 rounded-xl bg-brand-yellow text-white font-semibold hover:bg-yellow-600 transition-colors">
+                    Ya, aktifkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var btnActivate = document.getElementById('btn-activate-siren');
+            var btnStop = document.getElementById('btn-stop-siren');
+            var modal = document.getElementById('siren-confirm-modal');
+            var confirmYes = document.getElementById('confirm-yes');
+            var confirmCancel = document.getElementById('confirm-cancel');
+
+            var audioContext = null;
+            var oscillator = null;
+            var gainNode = null;
+            var sirenInterval = null;
+
+            function getAudioContext() {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                return audioContext;
+            }
+
+            function startSiren() {
+                if (oscillator) return;
+                var ctx = getAudioContext();
+                oscillator = ctx.createOscillator();
+                gainNode = ctx.createGain();
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+                gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                oscillator.start(ctx.currentTime);
+                var phase = 0;
+                sirenInterval = setInterval(function () {
+                    phase += 0.02;
+                    var freq = 800 + 600 * Math.sin(phase);
+                    oscillator.frequency.setValueAtTime(freq, ctx.currentTime);
+                }, 50);
+                btnActivate.classList.add('hidden');
+                btnStop.classList.remove('hidden');
+            }
+
+            function stopSiren() {
+                if (sirenInterval) {
+                    clearInterval(sirenInterval);
+                    sirenInterval = null;
+                }
+                if (oscillator) {
+                    try {
+                        oscillator.stop();
+                        oscillator.disconnect();
+                    } catch (e) {}
+                    oscillator = null;
+                }
+                if (gainNode) {
+                    try { gainNode.disconnect(); } catch (e) {}
+                    gainNode = null;
+                }
+                btnStop.classList.add('hidden');
+                btnActivate.classList.remove('hidden');
+            }
+
+            function openModal() {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            function closeModal() {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            btnActivate.addEventListener('click', function () {
+                openModal();
+            });
+
+            confirmCancel.addEventListener('click', function () {
+                closeModal();
+            });
+
+            confirmYes.addEventListener('click', function () {
+                closeModal();
+                startSiren();
+            });
+
+            btnStop.addEventListener('click', function () {
+                stopSiren();
+            });
+
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) closeModal();
+            });
+        })();
+    </script>
+    <script src="../voice-navigation-feature.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description"
+        content="Deteksi uang kertas Indonesia menggunakan AI YOLO untuk membantu pengguna tunanetra mengenali nominal uang." />
+    <title>Deteksi Uang — Asisten Disabilitas</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- ONNX Runtime Web (WASM backend) -->
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.0/dist/ort.min.js"></script>
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- ── Header ────────────────────────────────────────────────── -->
+        <header class="app-header">
+            <h1>💰 Deteksi Uang Indonesia</h1>
+            <p>Arahkan kamera ke uang kertas</p>
+        </header>
+
+        <!-- ── Camera Viewport ───────────────────────────────────────── -->
+        <div class="camera-viewport" id="camera-viewport">
+            <video id="camera-feed" autoplay playsinline muted></video>
+            <canvas id="detection-canvas"></canvas>
+
+            <!-- Decorative scan line -->
+            <div class="scan-line"></div>
+
+            <!-- Corner markers -->
+            <div class="corner-marker tl"></div>
+            <div class="corner-marker tr"></div>
+            <div class="corner-marker bl"></div>
+            <div class="corner-marker br"></div>
+        </div>
+
+        <!-- ── Status Indicator ──────────────────────────────────────── -->
+        <div class="status-bar">
+            <div class="status-dot" id="status-dot"></div>
+            <span id="status-text">Memuat model AI…</span>
+        </div>
+
+        <!-- ── Detection Result ──────────────────────────────────────── -->
+        <div class="result-card" id="result-card">
+            <div class="result-label">Nominal Terdeteksi</div>
+            <div id="result-value" class="result-placeholder">Belum ada deteksi</div>
+            <div id="result-confidence"></div>
+        </div>
+
+    </div>
+
+    <!-- ── Application Scripts (ES Modules) ────────────────────────── -->
+    <script type="module" src="js/app.js"></script>
+    <script src="../voice-navigation-feature.js"></script>
+</body>
+
+</html>
