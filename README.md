@@ -8,7 +8,7 @@
 
 Project ini dikembangkan untuk mendukung aksesibilitas teknologi dan memberikan solusi praktis bagi berbagai kebutuhan pengguna disabilitas.
 
-CATATAN : Project ini baik digunakan di browser Chrome dan 
+CATATAN : Project ini baik digunakan di browser Chrome
 ---
 
 #  Demo Aplikasi
