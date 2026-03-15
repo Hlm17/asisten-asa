@@ -1,3 +1,7 @@
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Status](https://img.shields.io/badge/status-active-success)
+![Accessibility](https://img.shields.io/badge/accessibility-focused-purple)
+
 #  Asisten Asa
 
 **Asisten Asa** adalah aplikasi berbasis web yang dirancang untuk membantu penyandang disabilitas dalam menjalani aktivitas digital dengan lebih mudah, mandiri, dan inklusif.
